@@ -38,6 +38,14 @@
           <plugin>
             <groupId>org.scala-tools</groupId>
             <artifactId>maven-scala-plugin</artifactId>
+            <configuration>
+              <launchers>
+                <launcher>
+                  <id>myLauncher</id>
+                  <mainClass>org.guigit.App</mainClass>
+                </launcher>
+              </launchers>
+            </configuration>
             <executions>
               <execution>
                 <id>scala-compile-first</id>
