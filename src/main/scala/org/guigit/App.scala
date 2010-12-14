@@ -11,25 +11,25 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
 import scala.collection.jcl.MutableIterator.Wrapper
 
-object App 
+object App extends Application
 {
-    implicit def javaIteratorToScalaIterator[A](it : java.util.Iterator[A]) = new Wrapper(it)
-    def main(args: Array[String])
-    {
-      try {
-        var builder = new FileRepositoryBuilder()
-        var repository = builder.setGitDir(new File("/home/nazri/src/git/.git")).readEnvironment()
-                .findGitDir()
-                .build();
+  implicit def javaIteratorToScalaIterator[A](it : java.util.Iterator[A]) = new Wrapper(it)
 
-        var g = new Git(repository);
-        var log = g.log().add(repository.resolve("HEAD"));
 
-	var a = 1
-	log.call().iterator().foreach((commit:RevCommit) => { if (a < 2) { println(commit.getFullMessage()) }; a += 1 } )
-      } catch {
-        case e:IOException => println("guigit: " + e.getStackTrace())
-        case e:NoHeadException => println("guigit: " + e.getStackTrace())
-      }
-    }
+  try {
+    var builder = new FileRepositoryBuilder()
+    var repository = builder.setGitDir(new File("/home/nazri/src/git/.git")).readEnvironment()
+    .findGitDir()
+    .build();
+
+    var g = new Git(repository);
+    var log = g.log().add(repository.resolve("HEAD"));
+
+    var a = 1
+    log.call().iterator().foreach((commit:RevCommit) => { if (a < 2) { println(commit.getFullMessage()) }; a += 1 } )
+  } catch {
+    case e:IOException => println("guigit: " + e.getStackTrace())
+    case e:NoHeadException => println("guigit: " + e.getStackTrace())
+  }
+
 }
