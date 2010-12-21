@@ -24,6 +24,9 @@ object App extends Application
 {
 
   var good = false
+  val nodesTable = new Table()
+  nodesTable.addColumn("refcommit", classOf[RevCommit])
+
   try {
     var builder = new FileRepositoryBuilder()
     var repository = builder.readEnvironment()
@@ -59,13 +62,16 @@ object App extends Application
   if (!good)
     exit()
 
+  val graph = new Graph(nodesTable, true /* directed */)
+
   val vis = new Visualization()
   val display = new Display(vis)
 
   val frame = new JFrame("GuiGit")
   frame.add(display)
   val screenSize = Toolkit.getDefaultToolkit().getScreenSize()
-  frame.setSize(800, (screenSize.height/1.25).intValue)
+  val height = screenSize.height / 1.25
+  frame.setSize(800, height.intValue())
   frame.setBackground(java.awt.Color.blue)
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setLocationRelativeTo(null)
