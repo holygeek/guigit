@@ -20,6 +20,13 @@ object App extends Application
                             .findGitDir()
                             .build();
 
+    val allrefs = repository.getAllRefs()
+    allrefs.keySet().foreach(
+                      (refname:String) => {
+                        println("Ref: " + refname + ": " + allrefs.get(refname))
+                      }
+                    )
+
     var g = new Git(repository);
     var log = g.log().add(repository.resolve("HEAD"));
 
