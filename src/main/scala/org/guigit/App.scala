@@ -9,12 +9,10 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 
-import scala.collection.jcl.MutableIterator.Wrapper
+import scala.collection.JavaConversions._
 
 object App extends Application
 {
-  implicit def javaIteratorToScalaIterator[A](it : java.util.Iterator[A])
-                                                              = new Wrapper(it)
 
   try {
     var builder = new FileRepositoryBuilder()
