@@ -7,4 +7,5 @@ class GuigitProject(info: ProjectInfo) extends DefaultProject(info)
 
     val library_jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "0.9.3"
     val library_prefuse = "org.prefuse" % "prefuse" % "beta-20071021"
+    val library_junit = "junit"  % "junit"  % "4.7"  % "test"
 }
