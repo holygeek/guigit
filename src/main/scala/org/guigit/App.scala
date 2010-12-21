@@ -34,7 +34,7 @@ object App extends Application
     var a = 1
     log.call().iterator().foreach(
                             (commit:RevCommit) => {
-                              if (a < 2) {
+                              if (a < 5) {
                                 println(commit.getFullMessage())
                               }
                               a += 1
