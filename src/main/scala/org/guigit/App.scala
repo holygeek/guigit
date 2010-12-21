@@ -16,8 +16,7 @@ object App extends Application
 
   try {
     var builder = new FileRepositoryBuilder()
-    var repository = builder.setGitDir(new File("/home/nazri/src/git/.git"))
-                            .readEnvironment()
+    var repository = builder.readEnvironment()
                             .findGitDir()
                             .build();
 
