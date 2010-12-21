@@ -28,7 +28,8 @@ object App extends Application
                     )
 
     var g = new Git(repository);
-    var log = g.log().add(repository.resolve("HEAD"));
+    var log = g.log().add(repository.resolve("HEAD"))
+
 
     var a = 1
     log.call().iterator().foreach(
