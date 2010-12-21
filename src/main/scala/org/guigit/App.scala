@@ -44,5 +44,4 @@ object App extends Application
     case e:IOException => println("guigit: " + e.getStackTrace())
     case e:NoHeadException => println("guigit: " + e.getStackTrace())
   }
-
 }
