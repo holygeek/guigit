@@ -77,20 +77,18 @@ object App extends Application
         .iterator()
         .foreach(
           (commit:RevCommit) => {
-            if (a < 5) {
-              println(commit.getFullMessage())
+            if (a < 100) {
+              val row = nodesTable.addRow()
+              nodesTable.set(row, "revcommit", commit)
+              rowIdFor += commit -> row
+              edgeMap += commit -> commit.getParents()
             }
             a += 1
-            val row = nodesTable.addRow()
-            nodesTable.set(row, "revcommit", commit)
-            rowIdFor += commit -> row
-            edgeMap += commit -> commit.getParents()
           }
         )
     good = true
   } catch {
-    case e:IOException => println("guigit: " + e.getStackTrace())
-    case e:NoHeadException => println("guigit: " + e.getStackTrace())
+    case e : Exception => { println("guigit:");  e.printStackTrace() }
   }
 
   if (!good)
