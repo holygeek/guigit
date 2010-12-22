@@ -70,8 +70,6 @@ object App extends Application
                       }
                     )
 
-
-
     var a = 1
     log.call()
         .iterator()
