@@ -62,11 +62,11 @@ object App extends Application
 
     allrefs.keySet().foreach(
                       (refname:String) => {
-                        println("Ref: "
-                                + refname
-                                + ": "
-                                + allrefs.get(refname))
-                        log.add(repository.resolve(refname))
+                        if (refname.matches("^refs/heads/")
+                              || refname.matches("^refs/remotes/")) {
+                          println("Adding: " + refname)
+                          log.add(repository.resolve(refname))
+                        }
                       }
                     )
 
