@@ -100,7 +100,10 @@ object App extends Application
         val commitId = rowIdFor.getOrElse(parentMap._1, -1)
         parentMap._2.foreach((commit) => {
             val parentId:Int = rowIdFor.getOrElse(commit, -1)
-            graph.addEdge(commitId, parentId)
+            if (commitId != -1 && parentId != -1)
+              graph.addEdge(commitId, parentId)
+            else
+              println("FIXME: Got -1")
         })
     })
 
