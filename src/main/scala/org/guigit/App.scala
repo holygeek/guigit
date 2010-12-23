@@ -40,16 +40,17 @@ import prefuse.action.RepaintAction
 import prefuse.controls.DragControl
 import prefuse.controls.PanControl
 import prefuse.controls.ZoomControl
-import prefuse.controls.FocusControl
 import prefuse.visual.expression.InGroupPredicate
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedList
 
+import org.domain.Help
+import org.visual.ControlAdapter
+
 object App
 {
-  final val ABBREVIATE_LENGTH = 8
   def main(args:Array[String]) {
     var good = false
     val nodesTable = new Table()
@@ -170,7 +171,7 @@ object App
       var rootNode = graph.getNode(rootCommitIds(0))
       graph.getSpanningTree(rootNode)
       var revcommit = rootNode.get("revcommit").asInstanceOf[RevCommit]
-      println("First root node is " + revcommit.getFullMessage())
+      println("First root node:\n" + Help.format(revcommit))
     }
     layout.add(nodeLinkTreeLayout)
 
@@ -187,24 +188,16 @@ object App
                            var revcommit = obj.asInstanceOf[VisualItem]
                                               .get("revcommit")
                                               .asInstanceOf[RevCommit]
-                           println("commit " + revcommit.getId())
-                           val person = revcommit.getCommitterIdent()
-                           println("Author: " + person.getName() + " <" + person.getEmailAddress() + ">")
-                           println("Date:   " + revcommit.getCommitTime())
-                           println("")
-                           println(revcommit.getFullMessage())
+                          println(Help format revcommit)
                         })
                     }
                   })
 
     val display = new Display(vis)
-    // drag individual items around
-    //display.addControlListener(new DragControl())
-    // pan with left-click drag on background
+    display.addControlListener(new DragControl())
     display.addControlListener(new PanControl())
-    // zoom with right-click drag
     display.addControlListener(new ZoomControl())
-    display.addControlListener(new FocusControl("clickedItem", 1, "itemClickedAction"))
+    display.addControlListener(new ControlAdapter())
 
     val frame = new JFrame("GuiGit")
     frame.add(display)
