@@ -2,13 +2,9 @@ package org.guigit
 
 import java.io.File
 import java.io.IOException
-import java.awt.Toolkit
 import java.awt.geom.Rectangle2D
 import java.awt.Shape
 import java.awt.Color
-import java.awt.geom.Point2D
-import javax.swing.JFrame
-import javax.swing.WindowConstants
 import javax.swing.SwingUtilities
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.LogCommand
@@ -28,6 +24,7 @@ import prefuse.render.LabelRenderer
 import prefuse.render.ShapeRenderer
 import prefuse.render.AbstractShapeRenderer
 import prefuse.render.DefaultRendererFactory
+import prefuse.render.RendererFactory
 import prefuse.action.assignment.ColorAction
 import prefuse.visual.VisualItem
 import prefuse.util.ColorLib
@@ -48,6 +45,7 @@ import scala.collection.mutable.LinkedList
 
 import org.domain.Help
 import org.visual.ControlAdapter
+import org.gui.GuiGit
 
 object App
 {
@@ -108,7 +106,24 @@ object App
     if (!good)
       exit()
 
+    val graph = createGraph(nodesTable, edgeMap, rowIdFor)
+    val vis = createVisualization(graph, rootCommitIds)
+    val display = createDisplay(vis)
+    val guigit = new GuiGit(display)
+
+    List("shape", "color", "layout", "repaint").foreach(vis.run(_))
+  }
+
+  def createGraph(nodesTable: Table,
+                  edgeMap: HashMap[RevCommit, Array[RevCommit]],
+                  rowIdFor: HashMap[RevCommit, Int]) = {
     val graph = new Graph(nodesTable, true /* directed */)
+    createEdges(graph, edgeMap, rowIdFor)
+    graph
+  }
+
+  def createEdges(graph:Graph, edgeMap:HashMap[RevCommit, Array[RevCommit]],
+                                rowIdFor:HashMap[RevCommit, Int]):Unit = {
     val edges = graph.getEdgeTable()
     edgeMap.foreach((parentMap) => {
           val commitId = rowIdFor.getOrElse(parentMap._1, -1)
@@ -121,21 +136,20 @@ object App
                 println("FIXME: Got -1")
           })
       })
+  }
 
-    val vis = new Visualization()
-    vis.add("graph", graph)
+  def getShapeAction(nodesGroup:String):ShapeAction = {
+    var nodeShapeAction = new ShapeAction(nodesGroup)
+    nodeShapeAction.setDefaultShape(prefuse.Constants.SHAPE_ELLIPSE)
+    nodeShapeAction
+  }
 
-    val rf = new DefaultRendererFactory()
-    val nodeRenderer = new ShapeRenderer(10)
-    rf.setDefaultRenderer(nodeRenderer)
-    vis.setRendererFactory(rf)
+  def getColorActions():ActionList = {
     //val textColorAction = new ColorAction("graph.nodes",
     //          VisualItem.TEXTCOLOR,
     //          ColorLib.gray(0))
 
     // Nodes
-    var nodeShapeAction = new ShapeAction("graph.nodes")
-    nodeShapeAction.setDefaultShape(prefuse.Constants.SHAPE_ELLIPSE)
     var nodeStrokeAction = new ColorAction("graph.nodes",
            VisualItem.STROKECOLOR,
            ColorLib.color(Color.blue))
@@ -157,61 +171,62 @@ object App
     color.add(nodeFillColorAction)
     color.add(edgeColorAction)
     color.add(arrowHeadColorAction)
+    color
+  }
 
-    var repaint = new ActionList(Activity.INFINITY)
-    repaint.add(new RepaintAction())
-
-    // Layout
+  def getLayoutActions():ActionList = {
     var layout = new ActionList()
     var nodeLinkTreeLayout = new NodeLinkTreeLayout("graph")
     nodeLinkTreeLayout.setOrientation(prefuse.Constants.ORIENT_TOP_BOTTOM)
+    layout.add(nodeLinkTreeLayout)
+    layout
+  }
+
+  def getRepaintActions():ActionList = {
+    var repaint = new ActionList(Activity.INFINITY)
+    repaint.add(new RepaintAction())
+    repaint
+  }
+
+  def getNameActionPairs():List[(String, Action)] = {
+    List("shape"   -> getShapeAction("graph.nodes"),
+                              "color"   -> getColorActions(),
+                              "layout"  -> getLayoutActions(),
+                              "repaint" -> getRepaintActions())
+  }
+
+  def createRendererFactory():RendererFactory = {
+    val rf = new DefaultRendererFactory()
+    val nodeRenderer = new ShapeRenderer(10)
+    rf.setDefaultRenderer(nodeRenderer)
+    rf
+  }
+
+  def createVisualization(graph: Graph, rootCommitIds: scala.List[Int]):Visualization = {
+    val vis = new Visualization()
+    vis.add("graph", graph)
+
+    vis.setRendererFactory(createRendererFactory())
+
     val n_rootCommits = rootCommitIds.size()
     if (n_rootCommits > 0) {
       println("We have " + n_rootCommits + " root commit(s)")
-      var rootNode = graph.getNode(rootCommitIds(0))
-      graph.getSpanningTree(rootNode)
-      var revcommit = rootNode.get("revcommit").asInstanceOf[RevCommit]
-      println("First root node:\n" + Help.format(revcommit))
+      val firstRoot = Help.createSpanningTreeFor(graph, rootCommitIds(0))
+      println("First root node:\n" + Help.format(firstRoot))
     }
-    layout.add(nodeLinkTreeLayout)
 
-    vis.putAction("shape", nodeShapeAction)
-    vis.putAction("color", color)
-    vis.putAction("layout", layout)
-    vis.putAction("repaint", repaint)
-    vis.addFocusGroup("clickedItem")
-    vis.putAction("itemClickedAction",
-                  new Action() {
-                    override def run(frac:Double):Unit = {
-                      vis.items("clickedItem")
-                        .foreach((obj:Any) => {
-                           var revcommit = obj.asInstanceOf[VisualItem]
-                                              .get("revcommit")
-                                              .asInstanceOf[RevCommit]
-                          println(Help format revcommit)
-                        })
-                    }
-                  })
+    for((name, action) <- getNameActionPairs) {
+      vis.putAction(name, action)
+    }
+    vis
+  }
 
+  def createDisplay(vis:Visualization):Display = {
     val display = new Display(vis)
     display.addControlListener(new DragControl())
     display.addControlListener(new PanControl())
     display.addControlListener(new ZoomControl())
     display.addControlListener(new ControlAdapter())
-
-    val frame = new JFrame("GuiGit")
-    frame.add(display)
-    val screenSize = Toolkit.getDefaultToolkit().getScreenSize()
-    frame.setSize(800, (screenSize.height/1.25).intValue)
-    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-    frame.setLocationRelativeTo(null)
-
-    frame.setVisible(true)
-    val center = new Point2D.Double(0, 0)
-    display.panTo(center)
-    vis.run("shape")
-    vis.run("color")
-    vis.run("layout")
-    vis.run("repaint")
+    display
   }
 }
