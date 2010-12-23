@@ -20,6 +20,9 @@ import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import prefuse.Display
 import prefuse.data.Graph
 import prefuse.data.Table
+import prefuse.data.Node
+import prefuse.action.Action
+import prefuse.visual.NodeItem
 import prefuse.Visualization
 import prefuse.render.LabelRenderer
 import prefuse.render.ShapeRenderer
@@ -32,32 +35,37 @@ import prefuse.action.ActionList
 import prefuse.action.assignment.ShapeAction
 import prefuse.activity.Activity
 import prefuse.action.layout.graph.ForceDirectedLayout
+import prefuse.action.layout.graph.NodeLinkTreeLayout
 import prefuse.action.RepaintAction
 import prefuse.controls.DragControl
 import prefuse.controls.PanControl
 import prefuse.controls.ZoomControl
+import prefuse.controls.FocusControl
 import prefuse.visual.expression.InGroupPredicate
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.LinkedList
 
 object App
 {
+  final val ABBREVIATE_LENGTH = 8
   def main(args:Array[String]) {
     var good = false
     val nodesTable = new Table()
     nodesTable.addColumn("revcommit", classOf[RevCommit])
     val rowIdFor = new HashMap[RevCommit, Int]
     val edgeMap = new HashMap[RevCommit, Array[RevCommit]]
+    var rootCommitIds: scala.List[Int] = Nil
 
     try {
       var builder = new FileRepositoryBuilder()
       var repository = builder.readEnvironment()
                               .findGitDir()
-                              .build();
+                              .build()
 
       val allrefs = repository.getAllRefs()
-      var g = new Git(repository);
+      var g = new Git(repository)
       var log = g.log()
 
       allrefs.keySet().foreach(
@@ -70,23 +78,30 @@ object App
                         }
                       )
 
-      var a = 1
+      //var a = 1
       log.call()
           .iterator()
           .foreach(
             (commit:RevCommit) => {
-              if (a < 100) {
+              //if (a < 100) {
                 val row = nodesTable.addRow()
                 nodesTable.set(row, "revcommit", commit)
                 rowIdFor += commit -> row
-                edgeMap += commit -> commit.getParents()
-              }
-              a += 1
+                val n_parent = commit.getParentCount()
+                if (n_parent > 0)
+                  edgeMap += commit -> commit.getParents()
+                else
+                  rootCommitIds = rootCommitIds ::: scala.List(row)
+              //}
+              //a += 1
             }
           )
       good = true
     } catch {
-      case e : Exception => { println("guigit:");  e.printStackTrace() }
+      case e : Exception => {
+                    println("guigit:")
+                    e.printStackTrace()
+               }
     }
 
     if (!good)
@@ -98,8 +113,9 @@ object App
           val commitId = rowIdFor.getOrElse(parentMap._1, -1)
           parentMap._2.foreach((commit) => {
               val parentId:Int = rowIdFor.getOrElse(commit, -1)
-              if (commitId != -1 && parentId != -1)
-                graph.addEdge(commitId, parentId)
+              if (commitId != -1 && parentId != -1) {
+                graph.addEdge(parentId, commitId)
+              }
               else
                 println("FIXME: Got -1")
           })
@@ -141,21 +157,54 @@ object App
     color.add(edgeColorAction)
     color.add(arrowHeadColorAction)
 
-    var layout = new ActionList(Activity.INFINITY);
-    layout.add(new ForceDirectedLayout("graph"));
-    layout.add(new RepaintAction());
+    var repaint = new ActionList(Activity.INFINITY)
+    repaint.add(new RepaintAction())
+
+    // Layout
+    var layout = new ActionList()
+    var nodeLinkTreeLayout = new NodeLinkTreeLayout("graph")
+    nodeLinkTreeLayout.setOrientation(prefuse.Constants.ORIENT_TOP_BOTTOM)
+    val n_rootCommits = rootCommitIds.size()
+    if (n_rootCommits > 0) {
+      println("We have " + n_rootCommits + " root commit(s)")
+      var rootNode = graph.getNode(rootCommitIds(0))
+      graph.getSpanningTree(rootNode)
+      var revcommit = rootNode.get("revcommit").asInstanceOf[RevCommit]
+      println("First root node is " + revcommit.getFullMessage())
+    }
+    layout.add(nodeLinkTreeLayout)
 
     vis.putAction("shape", nodeShapeAction)
-    vis.putAction("color", color);
-    vis.putAction("layout", layout);
+    vis.putAction("color", color)
+    vis.putAction("layout", layout)
+    vis.putAction("repaint", repaint)
+    vis.addFocusGroup("clickedItem")
+    vis.putAction("itemClickedAction",
+                  new Action() {
+                    override def run(frac:Double):Unit = {
+                      vis.items("clickedItem")
+                        .foreach((obj:Any) => {
+                           var revcommit = obj.asInstanceOf[VisualItem]
+                                              .get("revcommit")
+                                              .asInstanceOf[RevCommit]
+                           println("commit " + revcommit.getId())
+                           val person = revcommit.getCommitterIdent()
+                           println("Author: " + person.getName() + " <" + person.getEmailAddress() + ">")
+                           println("Date:   " + revcommit.getCommitTime())
+                           println("")
+                           println(revcommit.getFullMessage())
+                        })
+                    }
+                  })
 
     val display = new Display(vis)
     // drag individual items around
-    display.addControlListener(new DragControl());
+    //display.addControlListener(new DragControl())
     // pan with left-click drag on background
-    display.addControlListener(new PanControl());
+    display.addControlListener(new PanControl())
     // zoom with right-click drag
-    display.addControlListener(new ZoomControl());
+    display.addControlListener(new ZoomControl())
+    display.addControlListener(new FocusControl("clickedItem", 1, "itemClickedAction"))
 
     val frame = new JFrame("GuiGit")
     frame.add(display)
@@ -170,5 +219,6 @@ object App
     vis.run("shape")
     vis.run("color")
     vis.run("layout")
+    vis.run("repaint")
   }
 }
