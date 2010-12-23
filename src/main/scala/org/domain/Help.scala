@@ -3,6 +3,8 @@ package org.domain
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.lib.AnyObjectId
 
+import prefuse.data.Graph
+
 /* A wrapper around RevCommit */
 object Help {
 
@@ -16,5 +18,11 @@ object Help {
        .append(">\n")
        .append("Date:   ").append(revCommit.getCommitTime()).append("\n\n")
        .append(revCommit.getFullMessage()).toString()
+  }
+
+  def createSpanningTreeFor(graph: Graph, root:Int):RevCommit = {
+    var rootNode = graph.getNode(root)
+    graph.getSpanningTree(rootNode)
+    rootNode.get("revcommit").asInstanceOf[RevCommit]
   }
 }
