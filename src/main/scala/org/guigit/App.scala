@@ -41,9 +41,9 @@ import prefuse.visual.expression.InGroupPredicate
 import scala.collection.JavaConversions._
 import scala.collection.mutable.HashMap
 
-object App extends Application
+object App
 {
-
+  def main(args:Array[String]) {
   var good = false
   val nodesTable = new Table()
   nodesTable.addColumn("revcommit", classOf[RevCommit])
@@ -170,4 +170,5 @@ object App extends Application
   vis.run("shape")
   vis.run("color")
   vis.run("layout")
+  }
 }
