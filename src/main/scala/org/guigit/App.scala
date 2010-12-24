@@ -67,15 +67,11 @@ object App
       var g = new Git(repository)
       var log = g.log()
 
-      allrefs.keySet().foreach(
-                        (refname:String) => {
-                          if (refname.matches("^refs/heads/")
-                                || refname.matches("^refs/remotes/")) {
-                            println("Adding: " + refname)
-                            log.add(repository.resolve(refname))
-                          }
-                        }
-                      )
+      for(refname <- allrefs.keySet();
+         if refname.matches("^refs/(heads|remotes)/")) {
+                      println("Adding: " + refname)
+                      log.add(repository.resolve(refname))
+      }
 
       //var a = 1
       log.call()
@@ -190,9 +186,9 @@ object App
 
   def getNameActionPairs():List[(String, Action)] = {
     List("shape"   -> getShapeAction("graph.nodes"),
-                              "color"   -> getColorActions(),
-                              "layout"  -> getLayoutActions(),
-                              "repaint" -> getRepaintActions())
+         "color"   -> getColorActions(),
+         "layout"  -> getLayoutActions(),
+         "repaint" -> getRepaintActions())
   }
 
   def createRendererFactory():RendererFactory = {
