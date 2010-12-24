@@ -73,24 +73,22 @@ object App
                       log.add(repository.resolve(refname))
       }
 
-      //var a = 1
-      log.call()
-          .iterator()
-          .foreach(
-            (commit:RevCommit) => {
-              //if (a < 100) {
-                val row = nodesTable.addRow()
-                nodesTable.set(row, "revcommit", commit)
-                rowIdFor += commit -> row
-                val n_parent = commit.getParentCount()
-                if (n_parent > 0)
-                  edgeMap += commit -> commit.getParents()
-                else
-                  rootCommitIds = rootCommitIds ::: scala.List(row)
-              //}
-              //a += 1
-            }
-          )
+      object commits {
+        def update(row: Int, commit: RevCommit) = {
+          nodesTable.set(row, "revcommit", commit)
+          rowIdFor += commit -> row
+        }
+      }
+
+      for(commit:RevCommit <- log.call().iterator()) {
+        val row = nodesTable.addRow()
+        commits(row) = commit
+        if (commit.getParentCount() > 0)
+          edgeMap += commit -> commit.getParents()
+        else
+          rootCommitIds = rootCommitIds ::: scala.List(row)
+      }
+
       good = true
     } catch {
       case e : Exception => {
