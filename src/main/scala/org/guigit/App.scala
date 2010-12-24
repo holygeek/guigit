@@ -166,7 +166,7 @@ object App
     val n_rootCommits = rootCommits.size()
     if (n_rootCommits > 0) {
       println("We have " + n_rootCommits + " root commit(s)")
-      val firstRoot = Help.createSpanningTreeFor(graph, rootCommits(0))
+      val firstRoot = Help.createSpanningTreeFor(graph, rootCommits.head)
       println("First root node:\n" + Help.format(firstRoot))
     }
   }
