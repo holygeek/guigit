@@ -56,8 +56,6 @@ object App
     nodesTable.addColumn("revcommit", classOf[RevCommit])
     var graph = new Graph(nodesTable, true /* directed */)
 
-    val rowIdFor = new HashMap[RevCommit, Int]
-    val edgeMap = new HashMap[RevCommit, Array[RevCommit]]
     var rootCommits: scala.List[Node] = Nil
 
     try {
