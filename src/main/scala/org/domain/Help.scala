@@ -4,6 +4,7 @@ import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.lib.AnyObjectId
 
 import prefuse.data.Graph
+import prefuse.data.Node
 
 /* A wrapper around RevCommit */
 object Help {
@@ -20,8 +21,7 @@ object Help {
        .append(revCommit.getFullMessage()).toString()
   }
 
-  def createSpanningTreeFor(graph: Graph, root:Int):RevCommit = {
-    var rootNode = graph.getNode(root)
+  def createSpanningTreeFor(graph: Graph, rootNode:Node):RevCommit = {
     graph.getSpanningTree(rootNode)
     rootNode.get("revcommit").asInstanceOf[RevCommit]
   }

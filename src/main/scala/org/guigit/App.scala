@@ -44,6 +44,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedList
 
 import org.domain.Help
+import org.domain.Edges
 import org.visual.ControlAdapter
 import org.gui.GuiGit
 
@@ -53,9 +54,11 @@ object App
     var good = false
     val nodesTable = new Table()
     nodesTable.addColumn("revcommit", classOf[RevCommit])
+    var graph = new Graph(nodesTable, true /* directed */)
+
     val rowIdFor = new HashMap[RevCommit, Int]
     val edgeMap = new HashMap[RevCommit, Array[RevCommit]]
-    var rootCommitIds: scala.List[Int] = Nil
+    var rootCommits: scala.List[Node] = Nil
 
     try {
       var builder = new FileRepositoryBuilder()
@@ -73,20 +76,11 @@ object App
                       log.add(repository.resolve(refname))
       }
 
-      object commits {
-        def update(row: Int, commit: RevCommit) = {
-          nodesTable.set(row, "revcommit", commit)
-          rowIdFor += commit -> row
-        }
-      }
-
+      var graphEdges = new Edges(graph)
       for(commit:RevCommit <- log.call().iterator()) {
-        val row = nodesTable.addRow()
-        commits(row) = commit
-        if (commit.getParentCount() > 0)
-          edgeMap += commit -> commit.getParents()
-        else
-          rootCommitIds = rootCommitIds ::: scala.List(row)
+        var node = graphEdges.connect(commit, commit.getParents())
+        if (commit.getParentCount() == 0)
+          rootCommits = rootCommits ::: scala.List(node)
       }
 
       good = true
@@ -100,36 +94,12 @@ object App
     if (!good)
       exit()
 
-    val graph = createGraph(nodesTable, edgeMap, rowIdFor)
-    val vis = createVisualization(graph, rootCommitIds)
+    updateSpanningTree(graph, rootCommits)
+    val vis = createVisualization(graph)
     val display = createDisplay(vis)
     val guigit = new GuiGit(display)
 
     List("shape", "color", "layout", "repaint").foreach(vis.run(_))
-  }
-
-  def createGraph(nodesTable: Table,
-                  edgeMap: HashMap[RevCommit, Array[RevCommit]],
-                  rowIdFor: HashMap[RevCommit, Int]) = {
-    val graph = new Graph(nodesTable, true /* directed */)
-    createEdges(graph, edgeMap, rowIdFor)
-    graph
-  }
-
-  def createEdges(graph:Graph, edgeMap:HashMap[RevCommit, Array[RevCommit]],
-                                rowIdFor:HashMap[RevCommit, Int]):Unit = {
-    val edges = graph.getEdgeTable()
-    edgeMap.foreach((parentMap) => {
-          val commitId = rowIdFor.getOrElse(parentMap._1, -1)
-          parentMap._2.foreach((commit) => {
-              val parentId:Int = rowIdFor.getOrElse(commit, -1)
-              if (commitId != -1 && parentId != -1) {
-                graph.addEdge(parentId, commitId)
-              }
-              else
-                println("FIXME: Got -1")
-          })
-      })
   }
 
   def getShapeAction(nodesGroup:String):ShapeAction = {
@@ -196,18 +166,20 @@ object App
     rf
   }
 
-  def createVisualization(graph: Graph, rootCommitIds: scala.List[Int]):Visualization = {
+  def updateSpanningTree(graph: Graph, rootCommits: scala.List[Node]):Any = {
+    val n_rootCommits = rootCommits.size()
+    if (n_rootCommits > 0) {
+      println("We have " + n_rootCommits + " root commit(s)")
+      val firstRoot = Help.createSpanningTreeFor(graph, rootCommits(0))
+      println("First root node:\n" + Help.format(firstRoot))
+    }
+  }
+
+  def createVisualization(graph: Graph):Visualization = {
     val vis = new Visualization()
     vis.add("graph", graph)
 
     vis.setRendererFactory(createRendererFactory())
-
-    val n_rootCommits = rootCommitIds.size()
-    if (n_rootCommits > 0) {
-      println("We have " + n_rootCommits + " root commit(s)")
-      val firstRoot = Help.createSpanningTreeFor(graph, rootCommitIds(0))
-      println("First root node:\n" + Help.format(firstRoot))
-    }
 
     for((name, action) <- getNameActionPairs) {
       vis.putAction(name, action)
