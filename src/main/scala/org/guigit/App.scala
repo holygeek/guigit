@@ -68,11 +68,9 @@ object App
       var g = new Git(repository)
       var log = g.log()
 
-      for(refname <- allrefs.keySet();
-         if refname.matches("^refs/(heads|remotes)/")) {
-                      println("Adding: " + refname)
-                      log.add(repository.resolve(refname))
-      }
+      allrefs.keySet()
+             .filter(refname => refname.matches("^refs/(heads|remotes)/"))
+             .foreach(refname => log.add(repository.resolve(refname)))
 
       var graphEdges = new GraphEdges(graph)
       for(commit:RevCommit <- log.call().iterator()) {
