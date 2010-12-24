@@ -62,9 +62,7 @@ object App
 
     try {
       var builder = new FileRepositoryBuilder()
-      var repository = builder.readEnvironment()
-                              .findGitDir()
-                              .build()
+      var repository = builder.readEnvironment().findGitDir().build()
 
       val allrefs = repository.getAllRefs()
       var g = new Git(repository)
