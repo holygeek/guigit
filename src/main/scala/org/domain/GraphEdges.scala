@@ -7,14 +7,14 @@ import scala.collection.mutable.HashMap
 import org.eclipse.jgit.revwalk.RevCommit
 
 /* Helper class to create edges connecting the nodes in graph */
-class Edges(graph:Graph) {
+class GraphEdges(graph:Graph) {
   private val nodeFor = new HashMap[RevCommit, Node]
 
   def connect(commit: RevCommit, parents: Array[RevCommit]): Node = {
     val node = createOrGetNode(commit)
     for(parent <- parents) {
       val parentNode = createOrGetNode(parent)
-      graph.addEdge(parentNode, node)
+      graph.addEdge(node, parentNode)
     }
     return node
   }

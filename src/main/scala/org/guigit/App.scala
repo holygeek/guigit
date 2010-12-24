@@ -44,7 +44,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedList
 
 import org.domain.Help
-import org.domain.Edges
+import org.domain.GraphEdges
 import org.visual.ControlAdapter
 import org.gui.GuiGit
 
@@ -76,7 +76,7 @@ object App
                       log.add(repository.resolve(refname))
       }
 
-      var graphEdges = new Edges(graph)
+      var graphEdges = new GraphEdges(graph)
       for(commit:RevCommit <- log.call().iterator()) {
         var node = graphEdges.connect(commit, commit.getParents())
         if (commit.getParentCount() == 0)
