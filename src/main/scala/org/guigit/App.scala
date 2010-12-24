@@ -64,13 +64,13 @@ object App
       var builder = new FileRepositoryBuilder()
       var repository = builder.readEnvironment().findGitDir().build()
 
-      val allrefs = repository.getAllRefs()
       var g = new Git(repository)
       var log = g.log()
 
-      allrefs.keySet()
-             .filter(refname => refname.matches("^refs/(heads|remotes)/"))
-             .foreach(refname => log.add(repository.resolve(refname)))
+      repository.getAllRefs()
+                .keySet()
+                .filter(_.matches("^refs/(heads|remotes)/"))
+                .foreach(refname => log.add(repository.resolve(refname)))
 
       var graphEdges = new GraphEdges(graph)
       for(commit:RevCommit <- log.call().iterator()) {
