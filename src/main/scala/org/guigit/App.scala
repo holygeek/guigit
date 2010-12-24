@@ -5,18 +5,9 @@ import java.io.IOException
 import java.awt.geom.Rectangle2D
 import java.awt.Shape
 import java.awt.Color
-import javax.swing.SwingUtilities
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.LogCommand
-import org.eclipse.jgit.api.errors.NoHeadException
-import org.eclipse.jgit.lib.Repository
-import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 
 import prefuse.Display
 import prefuse.data.Graph
-import prefuse.data.Table
-import prefuse.data.Node
 import prefuse.action.Action
 import prefuse.visual.NodeItem
 import prefuse.Visualization
@@ -47,53 +38,19 @@ import org.domain.Help
 import org.domain.GraphEdges
 import org.visual.ControlAdapter
 import org.gui.GuiGit
+import org.domain.GraphBuilder
 
 object App
 {
   def main(args:Array[String]) {
-    var good = false
-    val nodesTable = new Table()
-    nodesTable.addColumn("revcommit", classOf[RevCommit])
-    var graph = new Graph(nodesTable, true /* directed */)
-
-    var rootCommits: scala.List[Node] = Nil
-
-    try {
-      var builder = new FileRepositoryBuilder()
-      var repository = builder.readEnvironment().findGitDir().build()
-
-      var g = new Git(repository)
-      var log = g.log()
-
-      repository.getAllRefs()
-                .keySet()
-                .filter(_.matches("^refs/(heads|remotes)/"))
-                .foreach(refname => log.add(repository.resolve(refname)))
-
-      var graphEdges = new GraphEdges(graph)
-      for(commit:RevCommit <- log.call().iterator()) {
-        var node = graphEdges.connect(commit, commit.getParents())
-        if (commit.getParentCount() == 0)
-          rootCommits = rootCommits ::: scala.List(node)
-      }
-
-      good = true
-    } catch {
-      case e : Exception => {
-                    println("guigit:")
-                    e.printStackTrace()
-               }
-    }
-
-    if (!good)
-      exit()
-
-    updateSpanningTree(graph, rootCommits)
-    val vis = createVisualization(graph)
+    val graph = new GraphBuilder().build().graph
+    if (graph == null)
+      exit(1)
+    val (vis, actions) = createVisualization(graph)
     val display = createDisplay(vis)
     val guigit = new GuiGit(display)
 
-    List("shape", "color", "layout", "repaint").foreach(vis.run(_))
+    actions.foreach(vis.run(_))
   }
 
   def getShapeAction(nodesGroup:String):ShapeAction = {
@@ -160,25 +117,18 @@ object App
     rf
   }
 
-  def updateSpanningTree(graph: Graph, rootCommits: scala.List[Node]):Any = {
-    val n_rootCommits = rootCommits.size()
-    if (n_rootCommits > 0) {
-      println("We have " + n_rootCommits + " root commit(s)")
-      val firstRoot = Help.createSpanningTreeFor(graph, rootCommits.head)
-      println("First root node:\n" + Help.format(firstRoot))
-    }
-  }
-
-  def createVisualization(graph: Graph):Visualization = {
+  def createVisualization(graph: Graph):(Visualization, List[String]) = {
     val vis = new Visualization()
     vis.add("graph", graph)
 
     vis.setRendererFactory(createRendererFactory())
 
+    var actions:List[String] = Nil
     for((name, action) <- getNameActionPairs) {
       vis.putAction(name, action)
+      actions = actions ::: List(name)
     }
-    vis
+    return (vis, actions)
   }
 
   def createDisplay(vis:Visualization):Display = {
