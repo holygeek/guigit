@@ -35,18 +35,28 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.LinkedList
 
 import org.domain.Help
-import org.domain.GraphEdges
 import org.visual.ControlAdapter
+import org.visual.layout.GitGraphLayout
 import org.gui.GuiGit
 import org.domain.GraphBuilder
 
 object App
 {
   def main(args:Array[String]) {
-    val graph = new GraphBuilder().build().graph
-    if (graph == null)
+    var branches = Array("HEAD")
+    if (args.length != 0)
+      branches = args
+    val graphBuilder = new GraphBuilder(branches) 
+    graphBuilder.build()
+    if (!graphBuilder.ok)
       exit(1)
-    val (vis, actions) = createVisualization(graph)
+    val gitGraph = graphBuilder.gitGraph
+    val graph = graphBuilder.graph
+
+    var (vis, actions) = createVisualization(graph)
+    vis.putAction("gitGraphLayoutAction", new GitGraphLayout(gitGraph))
+    actions = actions ::: List("gitGraphLayoutAction")
+
     val display = createDisplay(vis)
     val guigit = new GuiGit(display)
 
@@ -89,13 +99,18 @@ object App
     return color
   }
 
-  def getLayoutActions():ActionList = {
-    var layout = new ActionList()
-    var nodeLinkTreeLayout = new NodeLinkTreeLayout("graph")
-    nodeLinkTreeLayout.setOrientation(prefuse.Constants.ORIENT_TOP_BOTTOM)
-    layout.add(nodeLinkTreeLayout)
-    return layout
-  }
+  // def getLayoutActions(graph: Graph):ActionList = {
+  //   var layout = new ActionList()
+
+  //   // var nodeLinkTreeLayout = new NodeLinkTreeLayout("graph")
+  //   // nodeLinkTreeLayout.setOrientation(prefuse.Constants.ORIENT_TOP_BOTTOM)
+  //   // layout.add(nodeLinkTreeLayout)
+
+  //   val gitGraphLayout = new GitGraphLayout(graph, Nil)
+  //   layout.add(gitGraphLayout)
+
+  //   return layout
+  // }
 
   def getRepaintActions():ActionList = {
     var repaint = new ActionList(Activity.INFINITY)
@@ -106,13 +121,12 @@ object App
   def getNameActionPairs():List[(String, Action)] = {
     return List("shape"   -> getShapeAction("graph.nodes"),
          "color"   -> getColorActions(),
-         "layout"  -> getLayoutActions(),
          "repaint" -> getRepaintActions())
   }
 
   def createRendererFactory():RendererFactory = {
     val rf = new DefaultRendererFactory()
-    val nodeRenderer = new ShapeRenderer(10)
+    val nodeRenderer = new ShapeRenderer(org.visual.Constants.NODE_SIZE)
     rf.setDefaultRenderer(nodeRenderer)
     return rf
   }

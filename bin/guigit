@@ -3,7 +3,7 @@ guigit_src=$HOME/src/guigit
 
 classpath=$guigit_src/target/scala_2.8.1/guigit_2.8.1-1.0.jar:\
 $guigit_src/project/boot/scala-2.8.1/lib/scala-library.jar:\
-$guigit_src/lib_managed/scala_2.8.1/compile/org.eclipse.jgit-0.9.3.jar:\
+$guigit_src/lib_managed/scala_2.8.1/compile/org.eclipse.jgit-0.10.1.jar:\
 $guigit_src/lib_managed/scala_2.8.1/compile/prefuse-beta-20071021.jar
 
-java -cp $classpath org.guigit.App
+java -cp $classpath org.guigit.App "$@"

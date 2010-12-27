@@ -17,6 +17,6 @@ class GuiGit(display:Display) {
 
   frame.setVisible(true)
 
-  val center = new Point2D.Double(0, 0)
-  display.panTo(center)
+  // val center = new Point2D.Double(0, 0)
+  // display.panTo(center)
 }

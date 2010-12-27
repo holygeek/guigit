@@ -8,13 +8,17 @@ import org.eclipse.jgit.api.errors.NoHeadException
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.lib.Repository
+import org.eclipse.jgit.revwalk.RevWalk
 
 import prefuse.data.Graph
 import prefuse.data.Table
 import prefuse.data.Node
 
-class GraphBuilder {
+
+class GraphBuilder(branches:Array[String]) {
   var graph = new Graph(true /*directed*/)
+  val gitGraph = new GitGraph(graph)
+  var ok = false
 
   def build(): GraphBuilder = {
     var good = false
@@ -25,23 +29,29 @@ class GraphBuilder {
 
     try {
       var builder = new FileRepositoryBuilder()
-      var repository = builder.readEnvironment().findGitDir().build()
+      var repository = builder.setGitDir(null).readEnvironment().findGitDir().build()
+      gitGraph.revWalk = new RevWalk(repository)
 
       var g = new Git(repository)
       var log = g.log()
 
-      repository.getAllRefs()
-                .keySet()
-                .filter(_.matches("^refs/(heads|remotes)/"))
-                .foreach(refname => log.add(repository.resolve(refname)))
+      //repository.getAllRefs()
+      //          .keySet()
+      //          .filter(_.matches("^refs/(heads|remotes)/"))
+      //          .foreach(refname => log.add(repository.resolve(refname)))
+      branches.foreach(branch => {
+        val objectId = repository.resolve(branch)
+        log.add(objectId)
+        gitGraph.addBranch(objectId)
+      })
 
-      var graphEdges = new GraphEdges(graph)
       for(commit:RevCommit <- log.call().iterator()) {
-        var node = graphEdges.connect(commit, commit.getParents())
+        var node = gitGraph.connect(commit, commit.getParents())
         if (commit.getParentCount() == 0)
           rootCommits = rootCommits ::: scala.List(node)
       }
       updateSpanningTree(graph, rootCommits)
+      ok = true
     } catch {
       case e : Exception => {
                     println("guigit:")
