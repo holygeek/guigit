@@ -10,6 +10,7 @@ import org.eclipse.jgit.revwalk.RevCommit
 import scala.collection.JavaConversions._
 
 import java.awt.event.MouseEvent
+import java.awt.event.KeyEvent
 
 import org.domain.Help
 
@@ -17,6 +18,11 @@ class ControlAdapter extends prefuse.controls.ControlAdapter {
   val HAND_CURSOR = new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
   val DEFAULT_CURSOR =  new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR)
 
+  override def keyPressed(e: KeyEvent):Unit = {
+    if (e.getKeyChar() == 'q') {
+      exit()
+    }
+  }
   override def itemClicked(item: VisualItem, e: MouseEvent):Unit = {
     if (! item.isInstanceOf[NodeItem] )
       return
