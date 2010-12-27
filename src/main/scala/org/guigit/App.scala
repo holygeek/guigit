@@ -86,7 +86,7 @@ object App
     color.add(nodeFillColorAction)
     color.add(edgeColorAction)
     color.add(arrowHeadColorAction)
-    color
+    return color
   }
 
   def getLayoutActions():ActionList = {
@@ -94,7 +94,7 @@ object App
     var nodeLinkTreeLayout = new NodeLinkTreeLayout("graph")
     nodeLinkTreeLayout.setOrientation(prefuse.Constants.ORIENT_TOP_BOTTOM)
     layout.add(nodeLinkTreeLayout)
-    layout
+    return layout
   }
 
   def getRepaintActions():ActionList = {
@@ -104,7 +104,7 @@ object App
   }
 
   def getNameActionPairs():List[(String, Action)] = {
-    List("shape"   -> getShapeAction("graph.nodes"),
+    return List("shape"   -> getShapeAction("graph.nodes"),
          "color"   -> getColorActions(),
          "layout"  -> getLayoutActions(),
          "repaint" -> getRepaintActions())
@@ -114,7 +114,7 @@ object App
     val rf = new DefaultRendererFactory()
     val nodeRenderer = new ShapeRenderer(10)
     rf.setDefaultRenderer(nodeRenderer)
-    rf
+    return rf
   }
 
   def createVisualization(graph: Graph):(Visualization, List[String]) = {
@@ -137,6 +137,6 @@ object App
     display.addControlListener(new PanControl())
     display.addControlListener(new ZoomControl())
     display.addControlListener(new ControlAdapter())
-    display
+    return display
   }
 }
