@@ -6,4 +6,4 @@ $guigit_src/project/boot/scala-2.8.1/lib/scala-library.jar:\
 $guigit_src/lib_managed/scala_2.8.1/compile/org.eclipse.jgit-0.10.1.jar:\
 $guigit_src/lib_managed/scala_2.8.1/compile/prefuse-beta-20071021.jar
 
-java -cp $classpath org.guigit.App "$@"
+java -Xss8m -cp $classpath org.guigit.App "$@"
