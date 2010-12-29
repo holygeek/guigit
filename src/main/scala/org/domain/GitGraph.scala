@@ -23,7 +23,8 @@ class GitGraph(graph:Graph) {
     val node = createOrGetNode(commit)
     for(parent <- parents) {
       val parentNode = createOrGetNode(parent)
-      graph.addEdge(node, parentNode)
+      graph.addEdge(parentNode, node)
+      //graph.addEdge(node, parentNode)
     }
     return node
   }
