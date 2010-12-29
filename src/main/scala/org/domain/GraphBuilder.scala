@@ -50,7 +50,7 @@ class GraphBuilder(branches:Array[String]) {
         if (commit.getParentCount() == 0)
           rootCommits = rootCommits ::: scala.List(node)
       }
-      updateSpanningTree(graph, rootCommits)
+      //updateSpanningTree(graph, rootCommits)
       ok = true
     } catch {
       case e : Exception => {
@@ -62,13 +62,13 @@ class GraphBuilder(branches:Array[String]) {
 
     return this
   }
-  private def updateSpanningTree(graph: Graph, rootCommits: scala.List[Node]):Any = {
-    val n_rootCommits = rootCommits.size()
-    if (n_rootCommits > 0) {
-      println("We have " + n_rootCommits + " root commit(s)")
-      val firstRoot = Help.createSpanningTreeFor(graph, rootCommits.head)
-      println("First root node:\n" + Help.format(firstRoot))
-    }
-  }
+  //private def updateSpanningTree(graph: Graph, rootCommits: scala.List[Node]):Any = {
+  //  val n_rootCommits = rootCommits.size()
+  //  if (n_rootCommits > 0) {
+  //    println("We have " + n_rootCommits + " root commit(s)")
+  //    val firstRoot = Help.createSpanningTreeFor(graph, rootCommits.head)
+  //    println("First root node:\n" + Help.format(firstRoot))
+  //  }
+  //}
 
 }
