@@ -11,6 +11,7 @@ import org.eclipse.jgit.storage.file.FileRepository
 import org.eclipse.jgit.lib.Repository
 
 import org.domain.GitGraph
+import org.domain.GraphBuilder
 import java.io.File
 import java.io.FileWriter
 import java.io.BufferedWriter
@@ -91,7 +92,8 @@ class GitGraphLayoutSpec extends WordSpec {
 
   "A GitGraphLayout" should {
     "layout a merge of 1-1 commits successfully" in {
-      createRepo("03-merge-2-3-Commits")
+      val dir = "03-merge-2-3-Commits"
+      createRepo(dir)
       addAndCommitFile("a.txt", "one", "one")
 
       git.checkout().setCreateBranch(true).setName("right").call()
@@ -102,6 +104,42 @@ class GitGraphLayoutSpec extends WordSpec {
       git.checkout().setName("master").call()
       addAndCommitFile("a.txt", "two", "two")
       git.merge().include(other).call()
+
+      val fullpath = new File(testWorkDir, dir).getAbsolutePath()
+      val graphBuilder = new GraphBuilder(fullpath, Array("master", "right"))
+      graphBuilder.build()
+      val gitGraph = graphBuilder.gitGraph
+      val gitGraphLayout = new GitGraphLayout(gitGraph)
+      gitGraphLayout.firstPass()
+
+      gitGraph.branches.foreach(objectId => {
+        try {
+          val commit = gitGraph.revWalk.parseCommit(objectId)
+          showXYPosition(gitGraph, commit)
+        } catch {
+          case e: Exception => {
+            println("guigit:")
+            e.printStackTrace()
+          }
+        }
+      })
     }
   }
+
+  private def showXYPosition(gitGraph: GitGraph, commit: RevCommit):Any = {
+    val node = gitGraph.getNode(commit)
+    println(node)
+    // setX(item, null, item.get("x").asInstanceOf[Int] * ITEMGAP)
+    // setY(item, null, item.get("y").asInstanceOf[Int] * ITEMGAP)
+    val parents = commit.getParents()
+    if (parents == null) {
+      return
+    }
+
+    parents.foreach(
+              (commit: RevCommit)
+                  => showXYPosition(gitGraph, gitGraph.revWalk.parseCommit(commit))
+    )
+  }
+
 }

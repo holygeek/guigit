@@ -17,11 +17,26 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private val ITEMGAP = org.visual.Constants.NODE_SIZE * 4
   private val alreadyPositioned = new HashMap[RevCommit, Boolean] 
   private var gridList = new HashMap[Int, Int]()
-  override def run(frac: Double): Unit = {
+  def firstPass(): Unit = {
     gitGraph.branches.foreach(objectId => {
       try {
         val commit = gitGraph.revWalk.parseCommit(objectId)
         setPosition(commit, 0)
+      } catch {
+        case e: Exception => {
+          println("guigit:")
+          e.printStackTrace()
+        }
+      }
+    })
+  }
+
+  override def run(frac: Double): Unit = {
+    firstPass()
+    gitGraph.branches.foreach(objectId => {
+      try {
+        val commit = gitGraph.revWalk.parseCommit(objectId)
+        setXYPosition(commit)
       } catch {
         case e: Exception => {
           println("guigit:")
@@ -55,6 +70,22 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
            )
   }
 
+  private def setXYPosition(commit: RevCommit): Any = {
+    val node = gitGraph.getNode(commit)
+    val item = m_vis.getVisualItem("graph.nodes", node)
+    setX(item, null, item.get("x").asInstanceOf[Int] * ITEMGAP)
+    setY(item, null, item.get("y").asInstanceOf[Int] * ITEMGAP)
+    val parents = commit.getParents()
+    if (parents == null) {
+      return
+    }
+
+    parents.foreach(
+              (commit: RevCommit)
+                  => setXYPosition(gitGraph.revWalk.parseCommit(commit))
+    )
+  }
+
   private def setPosition(commit: RevCommit, row: Int): Any = {
     val node = gitGraph.getNode(commit)
     val item = m_vis.getVisualItem("graph.nodes", node)
@@ -66,8 +97,10 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     }
 
     var col = gridList.getOrElse(row, 0)
-    setX(item, null, col * ITEMGAP)
-    setY(item, null, row * ITEMGAP)
+    item.set("x", col)
+    item.set("y", row)
+    // setX(item, null, col * ITEMGAP)
+    // setY(item, null, row * ITEMGAP)
     gridList(row) = col + 1
     alreadyPositioned(commit) = true
 

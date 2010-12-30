@@ -29,6 +29,8 @@ class GraphBuilder(branches:Array[String]) {
     var good = false
     val nodesTable = graph.getNodeTable()
     nodesTable.addColumn("revcommit", classOf[RevCommit])
+    nodesTable.addColumn("x", classOf[Int])
+    nodesTable.addColumn("y", classOf[Int])
 
     var rootCommits: scala.List[Node] = Nil
 
@@ -46,6 +48,7 @@ class GraphBuilder(branches:Array[String]) {
       //          .foreach(refname => log.add(repository.resolve(refname)))
       branches.foreach(branch => {
         val objectId = repository.resolve(branch)
+        println("XXX Adding branch " + branch)
         log.add(objectId)
         gitGraph.addBranch(objectId)
       })
