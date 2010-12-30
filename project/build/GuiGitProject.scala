@@ -10,7 +10,8 @@ class GuigitProject(info: ProjectInfo) extends DefaultProject(info)
 
     val library_jgit = "org.eclipse.jgit" % "org.eclipse.jgit" % "0.10.1"
     val library_prefuse = "org.prefuse" % "prefuse" % "beta-20071021"
-    val library_junit = "junit"  % "junit"  % "4.7"  % "test"
+    //val library_junit = "junit"  % "junit"  % "4.7"  % "test"
+    val scalatest = "org.scalatest" % "scalatest" % "1.2" % "test"
 
     /******** Proguard *******/
     lazy val outputJar = outputPath / (name + "-" + version + "-standalone.jar")
