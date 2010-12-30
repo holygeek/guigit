@@ -14,7 +14,7 @@ import org.eclipse.jgit.revwalk.RevWalk
 import org.domain.GitGraph
 
 class GitGraphLayout(gitGraph: GitGraph) extends Layout {
-  private val ITEMGAP = org.visual.Constants.NODE_SIZE * 3
+  private val ITEMGAP = org.visual.Constants.NODE_SIZE * 4
   private val alreadyPositioned = new HashMap[RevCommit, Boolean] 
   private var gridList = new HashMap[Int, Int]()
   override def run(frac: Double): Unit = {
@@ -31,14 +31,41 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     })
   }
 
+  private def moveDown(commit: RevCommit, row: Int): Any = {
+
+    val node = gitGraph.getNode(commit)
+    val item = m_vis.getVisualItem("graph.nodes", node)
+    val currY = item.getY()
+
+    val col = gridList.getOrElse(row - 1, 0)
+    gridList(row) = col + 1
+    setY(item, null, row * ITEMGAP)
+
+    val parents = commit.getParents()
+    if (parents == null) {
+      return
+    }
+
+    parents.foreach(
+              (commit: RevCommit) => {
+                      val cmt = gitGraph.revWalk.parseCommit(commit)
+                      if (alreadyPositioned.getOrElse(cmt, false))
+                        moveDown(cmt, row)
+              }
+           )
+  }
+
   private def setPosition(commit: RevCommit, row: Int): Any = {
+    val node = gitGraph.getNode(commit)
+    val item = m_vis.getVisualItem("graph.nodes", node)
     if (alreadyPositioned.getOrElse(commit, false)) {
+      val currRow = (item.getX() / ITEMGAP).asInstanceOf[Int]
+      if (currRow > row)
+        moveDown(commit, row + 1)
       return
     }
 
     var col = gridList.getOrElse(row, 0)
-    val node = gitGraph.getNode(commit)
-    val item = m_vis.getVisualItem("graph.nodes", node)
     setX(item, null, col * ITEMGAP)
     setY(item, null, row * ITEMGAP)
     gridList(row) = col + 1
