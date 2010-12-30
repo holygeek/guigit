@@ -19,6 +19,11 @@ class GraphBuilder(branches:Array[String]) {
   var graph = new Graph(true /*directed*/)
   val gitGraph = new GitGraph(graph)
   var ok = false
+  var gitDir:String = null
+  def this(gitDir: String, branches: Array[String]) = {
+    this(branches)
+    this.gitDir = gitDir
+  }
 
   def build(): GraphBuilder = {
     var good = false
