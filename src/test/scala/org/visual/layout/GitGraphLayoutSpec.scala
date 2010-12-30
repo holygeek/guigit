@@ -1,9 +1,11 @@
 package org.visual.layout
 
 import org.scalatest.WordSpec
+import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.BeforeAndAfterAll
 
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.revwalk.RevCommit
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.storage.file.FileRepository
 import org.eclipse.jgit.lib.Repository
@@ -13,12 +15,13 @@ import java.io.File
 import java.io.FileWriter
 import java.io.BufferedWriter
 
-class GitGraphLayoutSpec extends WordSpec with BeforeAndAfterAll {
+class GitGraphLayoutSpec extends WordSpec {
   private var testWorkDir: String = null
   private var workDirectory: File = null
   private var iWorkIn = "testworkdir/GitGraphLayoutSpec"
+  private var git: Git = null
 
-  private def addAndCommitFile(git: Git, name: String, content: String, commitMsg: String) {
+  private def addAndCommitFile(name: String, content: String, commitMsg: String): RevCommit = {
     val os = new BufferedWriter(new FileWriter(new File(workDirectory, name)))
     os.write(content, 0, content.length())
     os.newLine()
@@ -29,21 +32,17 @@ class GitGraphLayoutSpec extends WordSpec with BeforeAndAfterAll {
     git.commit().setAuthor("Au Thor", "author@example.com").setMessage(commitMsg).call()
   }
 
-  private def createTestRepository() {
+  private def initGitRepository() {
     val gitDir = new File(workDirectory, ".git")
     val gitRepo = new FileRepository(gitDir)
     gitRepo.create()
-    val git = new Git(gitRepo)
-    addAndCommitFile(git, "a.txt", "one", "one")
-    addAndCommitFile(git, "a.txt", "two", "two")
-    addAndCommitFile(git, "a.txt", "three", "three")
-    addAndCommitFile(git, "a.txt", "four", "four")
+    git = new Git(gitRepo)
   }
 
-  override def beforeAll(configMap: Map[String, Any]) {
+  def createRepo(reponame: String) {
     require({
       testWorkDir = System.getProperty("user.dir") + "/target/" + iWorkIn;
-      workDirectory = new File(testWorkDir)
+      workDirectory = new File(testWorkDir, reponame)
       if (workDirectory.exists()) {
         def deleteDirectory(file:File) : Boolean = {
           def deleteFile(dfile : File) : Boolean = {
@@ -61,27 +60,48 @@ class GitGraphLayoutSpec extends WordSpec with BeforeAndAfterAll {
       workDirectory.mkdirs()
       }, "directory " + iWorkIn + " must be created successfully")
 
-    createTestRepository()
+    initGitRepository()
   }
 
-  // override def afterAll(configMap: Map[String, Any]) {
-  //   def deleteDirectory(file:File) : Boolean = {
-  //     def deleteFile(dfile : File) : Boolean = {
-  //       if(dfile.isDirectory){
-  //         val subfiles = dfile.listFiles
-  //         if(subfiles != null)
-  //           subfiles.foreach{ f => deleteFile(f) }
-  //       }
-  //       dfile.delete
-  //     }
-  //     deleteFile(file)
-  //   }
-  //   require(deleteDirectory(workDirectory), "directory " + iWorkIn + " must be deleted")
-  // }
+  "A GitGraphLayout" should {
+    "layout 4 commmits successfully" in {
+      createRepo("01-4-LinearCommits")
+      addAndCommitFile("a.txt", "one", "one")
+      addAndCommitFile("a.txt", "two", "two")
+      addAndCommitFile("a.txt", "three", "three")
+      addAndCommitFile("a.txt", "four", "four")
+    }
+  }
 
   "A GitGraphLayout" should {
-    "be created successfully from GitGraph" in {
-      println("Test workDir is " + testWorkDir)
+    "layout a merge of 3-2 commits successfully" in {
+      createRepo("02-merge-3-2-Commits")
+      addAndCommitFile("a.txt", "one", "one")
+
+      git.checkout().setCreateBranch(true).setName("right").call()
+      addAndCommitFile("b.txt", "b-two", "b-two")
+      val other = addAndCommitFile("b.txt", "b-three", "b-three")
+
+      git.checkout().setName("master").call()
+      addAndCommitFile("a.txt", "two", "two")
+      addAndCommitFile("a.txt", "three", "three")
+      git.merge().include(other).call()
+    }
+  }
+
+  "A GitGraphLayout" should {
+    "layout a merge of 1-1 commits successfully" in {
+      createRepo("03-merge-2-3-Commits")
+      addAndCommitFile("a.txt", "one", "one")
+
+      git.checkout().setCreateBranch(true).setName("right").call()
+      addAndCommitFile("b.txt", "b-two", "b-two")
+      addAndCommitFile("b.txt", "b-three", "b-three")
+      val other = addAndCommitFile("b.txt", "b-four", "b-tfour")
+
+      git.checkout().setName("master").call()
+      addAndCommitFile("a.txt", "two", "two")
+      git.merge().include(other).call()
     }
   }
 }
