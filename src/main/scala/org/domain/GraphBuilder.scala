@@ -33,6 +33,7 @@ class GraphBuilder(branches:Array[String]) {
     nodesTable.addColumn("revcommit", classOf[RevCommit])
     nodesTable.addColumn("x", classOf[Int])
     nodesTable.addColumn("y", classOf[Int])
+    nodesTable.addColumn("depth", classOf[Int], 0)
     nodesTable.addColumn("yOffset", classOf[Int], 0)
 
     var rootCommits: scala.List[Node] = Nil
