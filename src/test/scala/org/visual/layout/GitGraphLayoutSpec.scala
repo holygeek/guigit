@@ -6,7 +6,6 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.revwalk.RevCommit
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.eclipse.jgit.storage.file.FileRepository
 import org.eclipse.jgit.lib.Repository
 
@@ -36,6 +35,7 @@ class GitGraphLayoutSpec extends WordSpec {
   private def initGitRepository() {
     val gitDir = new File(workDirectory, ".git")
     val gitRepo = new FileRepository(gitDir)
+    // TODO set email config
     gitRepo.create()
     git = new Git(gitRepo)
   }
@@ -99,14 +99,15 @@ class GitGraphLayoutSpec extends WordSpec {
       git.checkout().setCreateBranch(true).setName("right").call()
       addAndCommitFile("b.txt", "b-two", "b-two")
       addAndCommitFile("b.txt", "b-three", "b-three")
-      val other = addAndCommitFile("b.txt", "b-four", "b-tfour")
+      val other = addAndCommitFile("b.txt", "b-four", "b-four")
 
       git.checkout().setName("master").call()
       addAndCommitFile("a.txt", "two", "two")
       git.merge().include(other).call()
 
-      val fullpath = new File(testWorkDir, dir).getAbsolutePath()
-      val graphBuilder = new GraphBuilder(fullpath, Array("master", "right"))
+      val fullpath = new File(testWorkDir, dir + "/.git").getAbsolutePath()
+      println("Fullpath is " + fullpath)
+      val graphBuilder = new GraphBuilder(fullpath, Array("master"))
       graphBuilder.build()
       val gitGraph = graphBuilder.gitGraph
       val gitGraphLayout = new GitGraphLayout(gitGraph)
@@ -129,16 +130,14 @@ class GitGraphLayoutSpec extends WordSpec {
   private def showXYPosition(gitGraph: GitGraph, commit: RevCommit):Any = {
     val node = gitGraph.getNode(commit)
     println(node)
-    // setX(item, null, item.get("x").asInstanceOf[Int] * ITEMGAP)
-    // setY(item, null, item.get("y").asInstanceOf[Int] * ITEMGAP)
     val parents = commit.getParents()
     if (parents == null) {
       return
     }
 
     parents.foreach(
-              (commit: RevCommit)
-                  => showXYPosition(gitGraph, gitGraph.revWalk.parseCommit(commit))
+      (commit: RevCommit)
+        => showXYPosition(gitGraph, commit)
     )
   }
 

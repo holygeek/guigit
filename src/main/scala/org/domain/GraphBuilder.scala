@@ -1,5 +1,7 @@
 package org.domain
 
+import java.io.File
+
 import scala.collection.JavaConversions._
 
 import org.eclipse.jgit.api.Git
@@ -19,10 +21,10 @@ class GraphBuilder(branches:Array[String]) {
   var graph = new Graph(true /*directed*/)
   val gitGraph = new GitGraph(graph)
   var ok = false
-  var gitDir:String = null
+  var gitDir:File = null
   def this(gitDir: String, branches: Array[String]) = {
     this(branches)
-    this.gitDir = gitDir
+    this.gitDir = new File(gitDir)
   }
 
   def build(): GraphBuilder = {
@@ -31,12 +33,13 @@ class GraphBuilder(branches:Array[String]) {
     nodesTable.addColumn("revcommit", classOf[RevCommit])
     nodesTable.addColumn("x", classOf[Int])
     nodesTable.addColumn("y", classOf[Int])
+    nodesTable.addColumn("yOffset", classOf[Int], 0)
 
     var rootCommits: scala.List[Node] = Nil
 
     try {
       var builder = new FileRepositoryBuilder()
-      var repository = builder.setGitDir(null).readEnvironment().findGitDir().build()
+      var repository = builder.setGitDir(gitDir).readEnvironment().findGitDir().build()
       gitGraph.revWalk = new RevWalk(repository)
 
       var g = new Git(repository)
@@ -48,15 +51,18 @@ class GraphBuilder(branches:Array[String]) {
       //          .foreach(refname => log.add(repository.resolve(refname)))
       branches.foreach(branch => {
         val objectId = repository.resolve(branch)
-        println("XXX Adding branch " + branch)
         log.add(objectId)
         gitGraph.addBranch(objectId)
       })
 
+      var n = 0
       for(commit:RevCommit <- log.call().iterator()) {
+        n += 1
+        if (n < 1000) {
         var node = gitGraph.connect(commit, commit.getParents())
         if (commit.getParentCount() == 0)
           rootCommits = rootCommits ::: scala.List(node)
+      }
       }
       //updateSpanningTree(graph, rootCommits)
       ok = true

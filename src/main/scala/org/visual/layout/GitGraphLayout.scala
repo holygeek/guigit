@@ -18,10 +18,11 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private val alreadyPositioned = new HashMap[RevCommit, Boolean] 
   private var gridList = new HashMap[Int, Int]()
   def firstPass(): Unit = {
+    println("Firstpass")
     gitGraph.branches.foreach(objectId => {
       try {
         val commit = gitGraph.revWalk.parseCommit(objectId)
-        setPosition(commit, 0)
+        setPosition(commit, 0, 0)
       } catch {
         case e: Exception => {
           println("guigit:")
@@ -31,12 +32,15 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     })
   }
 
+  // TODO use higher order function for going over first and
+  // second pass
   override def run(frac: Double): Unit = {
     firstPass()
+    println("2nd pass")
     gitGraph.branches.foreach(objectId => {
       try {
         val commit = gitGraph.revWalk.parseCommit(objectId)
-        setXYPosition(commit)
+        setXYPosition(commit, 0)
       } catch {
         case e: Exception => {
           println("guigit:")
@@ -49,32 +53,37 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private def moveDown(commit: RevCommit, row: Int): Any = {
 
     val node = gitGraph.getNode(commit)
-    val item = m_vis.getVisualItem("graph.nodes", node)
-    val currY = item.getY()
 
     val col = gridList.getOrElse(row - 1, 0)
     gridList(row) = col + 1
-    setY(item, null, row * ITEMGAP)
+    node.set("y", row)
 
     val parents = commit.getParents()
-    if (parents == null) {
+    if (parents == null)
       return
-    }
 
     parents.foreach(
               (commit: RevCommit) => {
-                      val cmt = gitGraph.revWalk.parseCommit(commit)
+                      val cmt = commit
+                      // val cmt = gitGraph.revWalk.parseCommit(commit)
                       if (alreadyPositioned.getOrElse(cmt, false))
                         moveDown(cmt, row)
               }
            )
   }
 
-  private def setXYPosition(commit: RevCommit): Any = {
+  private def setXYPosition(commit: RevCommit, currDown: Int): Any = {
     val node = gitGraph.getNode(commit)
     val item = m_vis.getVisualItem("graph.nodes", node)
+    val yOffset = item.get("yOffset").asInstanceOf[Int]
+
+    val nextDown = currDown + yOffset
+    if (yOffset > 0)
+      println("yOffset is " + yOffset + " for " + commit.getShortMessage())
+    else
+      println("yOffset is 0 for " + commit.getShortMessage())
     setX(item, null, item.get("x").asInstanceOf[Int] * ITEMGAP)
-    setY(item, null, item.get("y").asInstanceOf[Int] * ITEMGAP)
+    setY(item, null, (item.get("y").asInstanceOf[Int] + nextDown) * ITEMGAP)
     val parents = commit.getParents()
     if (parents == null) {
       return
@@ -82,25 +91,30 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
 
     parents.foreach(
               (commit: RevCommit)
-                  => setXYPosition(gitGraph.revWalk.parseCommit(commit))
+                  => setXYPosition(commit, nextDown)
     )
   }
 
-  private def setPosition(commit: RevCommit, row: Int): Any = {
+  private def setPosition(commit: RevCommit, row: Int, minCol: Int): Any = {
     val node = gitGraph.getNode(commit)
-    val item = m_vis.getVisualItem("graph.nodes", node)
     if (alreadyPositioned.getOrElse(commit, false)) {
-      val currRow = (item.getX() / ITEMGAP).asInstanceOf[Int]
-      if (currRow > row)
-        moveDown(commit, row + 1)
+      // println("Already position: yes")
+      val currRow = node.get("y").asInstanceOf[Int]
+      if (currRow <= row) {
+        val yOffset = row - currRow
+      println("  --> " + commit.getShortMessage() + " y = " + currRow)
+      println("  --> " + commit.getShortMessage() + " row = " + row)
+        println("Setting yOffset " + yOffset + " for " + commit.getShortMessage())
+        node.set("yOffset", yOffset)
+      }
       return
-    }
+    } // else
+      // println("Already position: no")
 
-    var col = gridList.getOrElse(row, 0)
-    item.set("x", col)
-    item.set("y", row)
-    // setX(item, null, col * ITEMGAP)
-    // setY(item, null, row * ITEMGAP)
+    var col = gridList.getOrElse(row, minCol)
+    println("Setting position at (" +col+ ", " +row+ ") " + commit.getShortMessage())
+    node.set("x", col)
+    node.set("y", row)
     gridList(row) = col + 1
     alreadyPositioned(commit) = true
 
@@ -111,8 +125,13 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
       return
     }
 
+    var nextMinCol = minCol
     parents.foreach(
               (commit: RevCommit)
-                  => setPosition(gitGraph.revWalk.parseCommit(commit), row + 1))
+                  => {
+                    setPosition(gitGraph.revWalk.parseCommit(commit), row + 1, nextMinCol)
+                    nextMinCol += 1
+                  }
+           )
   }
 }
