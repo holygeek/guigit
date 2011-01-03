@@ -55,14 +55,10 @@ class GraphBuilder(branches:Array[String]) {
         gitGraph.addBranch(objectId)
       })
 
-      var n = 0
       for(commit:RevCommit <- log.call().iterator()) {
-        n += 1
-        if (n < 1000) {
         var node = gitGraph.connect(commit, commit.getParents())
         if (commit.getParentCount() == 0)
           rootCommits = rootCommits ::: scala.List(node)
-      }
       }
       //updateSpanningTree(graph, rootCommits)
       ok = true
