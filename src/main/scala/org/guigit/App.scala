@@ -58,7 +58,7 @@ object App
     actions = actions ::: List("gitGraphLayoutAction")
 
     val display = createDisplay(vis)
-    val guigit = new GuiGit(display)
+    val guigit = new GuiGit(display, "GuiGit: " + new File(".").getAbsolutePath())
 
     actions.foreach(vis.run(_))
   }

@@ -7,8 +7,8 @@ import java.awt.Toolkit
 import javax.swing.JFrame
 import javax.swing.WindowConstants
 
-class GuiGit(display:Display) {
-  val frame = new JFrame("GuiGit")
+class GuiGit(display:Display, title: String) {
+  val frame = new JFrame(title)
   frame.add(display)
   val screenSize = Toolkit.getDefaultToolkit().getScreenSize()
   frame.setSize(800, (screenSize.height/1.25).intValue)
