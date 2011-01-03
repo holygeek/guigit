@@ -18,7 +18,6 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private val alreadyPositioned = new HashMap[RevCommit, Boolean] 
   private var gridList = new HashMap[Int, Int]()
   def firstPass(): Unit = {
-    println("Firstpass")
     gitGraph.branches.foreach(objectId => {
       try {
         val commit = gitGraph.revWalk.parseCommit(objectId)
@@ -35,7 +34,9 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   // TODO use higher order function for going over first and
   // second pass
   override def run(frac: Double): Unit = {
+    println("Firstpass")
     firstPass()
+    println("Firstpass done")
     println("2nd pass")
     gitGraph.branches.foreach(objectId => {
       try {
@@ -48,6 +49,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
         }
       }
     })
+    println("2nd pass done")
   }
 
   private def moveDown(commit: RevCommit, row: Int): Any = {
