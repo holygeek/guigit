@@ -80,10 +80,6 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     val yOffset = item.get("yOffset").asInstanceOf[Int]
 
     val nextDown = currDown + yOffset
-    if (yOffset > 0)
-      println("yOffset is " + yOffset + " for " + commit.getShortMessage())
-    else
-      println("yOffset is 0 for " + commit.getShortMessage())
     setX(item, null, item.get("x").asInstanceOf[Int] * ITEMGAP)
     setY(item, null, (item.get("y").asInstanceOf[Int] + nextDown) * ITEMGAP)
     val parents = commit.getParents()
@@ -100,21 +96,15 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private def setPosition(commit: RevCommit, row: Int, minCol: Int): Any = {
     val node = gitGraph.getNode(commit)
     if (alreadyPositioned.getOrElse(commit, false)) {
-      // println("Already position: yes")
       val currRow = node.get("y").asInstanceOf[Int]
       if (currRow <= row) {
         val yOffset = row - currRow
-      println("  --> " + commit.getShortMessage() + " y = " + currRow)
-      println("  --> " + commit.getShortMessage() + " row = " + row)
-        println("Setting yOffset " + yOffset + " for " + commit.getShortMessage())
         node.set("yOffset", yOffset)
       }
       return
-    } // else
-      // println("Already position: no")
+    }
 
     var col = gridList.getOrElse(row, minCol)
-    println("Setting position at (" +col+ ", " +row+ ") " + commit.getShortMessage())
     node.set("x", col)
     node.set("y", row)
     gridList(row) = col + 1
@@ -131,6 +121,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     parents.foreach(
               (commit: RevCommit)
                   => {
+                    //          commit does not work, have to parse it, find out why
                     setPosition(gitGraph.revWalk.parseCommit(commit), row + 1, nextMinCol)
                     nextMinCol += 1
                   }
