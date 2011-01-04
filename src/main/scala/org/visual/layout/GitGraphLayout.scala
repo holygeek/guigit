@@ -34,42 +34,44 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private val hasDepth = new HashMap[RevCommit, Boolean]
   private var gridList = new HashMap[Int, Int]()
 
-  def firstPass(): Unit = {
-    gitGraph.branches.foreach(objectId => {
-      try {
-        val commit = gitGraph.revWalk.parseCommit(objectId)
-        setPosition(commit, 0, 0)
-      } catch {
-        case e: Exception => {
-          println("guigit:")
-          e.printStackTrace()
-        }
-      }
-    })
-  }
-
   // TODO use higher order function for going over first and
   // second pass
   override def run(frac: Double): Unit = {
-    print("Firstpass")
-    firstPass()
-    println(" done")
-    print("2nd pass")
+    var branches:scala.List[RevCommit] = Nil
     gitGraph.branches.foreach(objectId => {
       try {
-        val commit = gitGraph.revWalk.parseCommit(objectId)
-        propageOffset(commit, 0)
+        branches = branches ::: List(gitGraph.revWalk.parseCommit(objectId))
       } catch {
         case e: Exception => {
           println("guigit:")
           e.printStackTrace()
+          exit
         }
       }
     })
-    println(" done")
-    print("3rd pass")
+
+    var i = 0
+    println("1. Set position");
+    branches.foreach(commit => { setPosition(commit, 0, i); i += 1} )
+    println("2. Propagete offset")
+    branches.foreach(commit => propageOffset(commit, 0) )
+    println("3. valign")
+    i = 0
+    branches.foreach(commit => { valign(commit, i); i += 1 } )
+    println("4. Set XY position")
     setXYPosition()
-    println(" done")
+    println("done")
+  }
+
+  private def valign(commit: RevCommit, x: Int) {
+    // val parents = commit.getParents()
+    // if (parents == null)
+    //   return
+    // var x = 0
+    // parents.foreach(
+    //   (commit: RevCommit) => {
+    //     val node = gitGraph.getNode(commit)
+    //   })
   }
 
   private def setXYPosition() {
@@ -88,6 +90,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     if (hasDepth.getOrElse(commit, false)) {
       val depth = node.depth
       if (depth < currDepth) {
+        // print("set node.depth = " + currDepth + " - " + node.y + " for " + commit.getShortMessage())
         node.depth =  currDepth - node.y
       }
       return
@@ -113,8 +116,11 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private def setPosition(commit: RevCommit, row: Int, minCol: Int): Any = {
     val node = gitGraph.getNode(commit)
     if (alreadyPositioned(commit)) {
-      if (node.y <= row)
-        node.yOffset= row - node.y
+      //println("commit " + commit.getShortMessage() + " is already positioned")
+      if ((node.y + node.yOffset) <= row) {
+        //println("  > setting its offset to " + row + " - " + node.y + " + " + node.yOffset)
+        node.yOffset = row - node.y + node.yOffset
+      }
       return
     }
 
@@ -127,7 +133,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     hasPosition(commit) = true
 
     // commit.getParentCount() give NPE when there's no parent - TODO send bug
-    // report to jgit
+    // report to jgit (it should return 0 instead
     val parents = commit.getParents()
     if (parents == null) {
       return
