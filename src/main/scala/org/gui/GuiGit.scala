@@ -15,6 +15,11 @@ class GuiGit(display:Display, title: String) {
   frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
   frame.setLocationRelativeTo(null)
 
+  val vis = display.getVisualization()
+  val rect = vis.getBounds("graph")
+  display.panAbs(-rect.getX(), -rect.getY() + 10)
+
+
   frame.setVisible(true)
 
   // val center = new Point2D.Double(0, 0)
