@@ -58,7 +58,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     gitGraph.branches.foreach(objectId => {
       try {
         val commit = gitGraph.revWalk.parseCommit(objectId)
-        setDepth(commit, 0)
+        propageOffset(commit, 0)
       } catch {
         case e: Exception => {
           println("guigit:")
@@ -76,15 +76,14 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     m_vis.items("graph.nodes").foreach(
       (obj:Any) => {
         val item = obj.asInstanceOf[VisualItem]
-        val yOffset = item.yOffset
-        val depth = item.depth + yOffset
         setX(item, null, item.x * ITEMGAP)
+        val depth = item.depth + item.yOffset
         setY(item, null, (item.y + depth) * ITEMGAP)
       }
     )
   }
 
-  private def setDepth(commit: RevCommit, currDepth: Int): Any = {
+  private def propageOffset(commit: RevCommit, currDepth: Int): Any = {
     val node = gitGraph.getNode(commit)
     if (hasDepth.getOrElse(commit, false)) {
       val depth = node.depth
@@ -105,7 +104,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
 
     parents.foreach(
               (commit: RevCommit)
-                  => setDepth(commit, nextDepth)
+                  => propageOffset(commit, nextDepth)
     )
   }
 
