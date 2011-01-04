@@ -53,7 +53,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     var i = 0
     println("1. Set position");
     branches.foreach(commit => { setPosition(commit, 0, i); i += 1} )
-    println("2. Propagete offset")
+    println("2. Propagate offset")
     branches.foreach(commit => propageOffset(commit, 0) )
     println("3. valign")
     i = 0
