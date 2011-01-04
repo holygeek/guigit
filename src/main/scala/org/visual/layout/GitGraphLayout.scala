@@ -30,7 +30,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   implicit def nodeDetailWrapper(item: VisualItem) = new NodeDetail(item.asInstanceOf[NodeItem])
 
   private val ITEMGAP = org.visual.Constants.NODE_SIZE * 4
-  private val alreadyPositioned = new HashMap[RevCommit, Boolean] 
+  private val hasPosition = new HashMap[RevCommit, Boolean]
   private val hasDepth = new HashMap[RevCommit, Boolean]
   private var gridList = new HashMap[Int, Int]()
 
@@ -109,9 +109,11 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     )
   }
 
+  private def alreadyPositioned(commit: RevCommit) = hasPosition.getOrElse(commit, false)
+
   private def setPosition(commit: RevCommit, row: Int, minCol: Int): Any = {
     val node = gitGraph.getNode(commit)
-    if (alreadyPositioned.getOrElse(commit, false)) {
+    if (alreadyPositioned(commit)) {
       if (node.y <= row)
         node.yOffset= row - node.y
       return
@@ -123,7 +125,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     node.x = col
     node.y = row
     gridList(row) = col + 1
-    alreadyPositioned(commit) = true
+    hasPosition(commit) = true
 
     // commit.getParentCount() give NPE when there's no parent - TODO send bug
     // report to jgit
