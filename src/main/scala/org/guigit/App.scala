@@ -26,6 +26,7 @@ import prefuse.action.layout.graph.ForceDirectedLayout
 import prefuse.action.layout.graph.NodeLinkTreeLayout
 import prefuse.action.RepaintAction
 import prefuse.controls.DragControl
+import prefuse.controls.SubtreeDragControl
 import prefuse.controls.PanControl
 import prefuse.controls.ZoomControl
 import prefuse.visual.expression.InGroupPredicate
@@ -37,6 +38,7 @@ import scala.collection.mutable.LinkedList
 import org.domain.Help
 import org.visual.ControlAdapter
 import org.visual.layout.GitGraphLayout
+import org.visual.SideTreeDragControl
 import org.gui.GuiGit
 import org.domain.GraphBuilder
 
@@ -147,7 +149,7 @@ object App
 
   def createDisplay(vis:Visualization):Display = {
     val display = new Display(vis)
-    display.addControlListener(new DragControl())
+    display.addControlListener(new SideTreeDragControl())
     display.addControlListener(new PanControl())
     display.addControlListener(new ZoomControl())
     display.addControlListener(new ControlAdapter())
