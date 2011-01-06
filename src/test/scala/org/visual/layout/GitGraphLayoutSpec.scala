@@ -111,7 +111,8 @@ class GitGraphLayoutSpec extends WordSpec {
       graphBuilder.build()
       val gitGraph = graphBuilder.gitGraph
       val gitGraphLayout = new GitGraphLayout(gitGraph)
-      gitGraphLayout.firstPass()
+      gitGraphLayout.setPosition()
+      gitGraphLayout.propagateOffset()
 
       gitGraph.branches.foreach(objectId => {
         try {
