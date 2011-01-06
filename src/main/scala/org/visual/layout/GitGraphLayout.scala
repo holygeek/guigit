@@ -31,7 +31,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
 
   private val ITEMGAP = org.visual.Constants.NODE_SIZE * 4
   private val hasPosition = new HashMap[RevCommit, Boolean]
-  private val hasDepth = new HashMap[RevCommit, Boolean]
+  private val hasPropagated =new HashMap[RevCommit, Boolean]
   private var gridList = new HashMap[Int, Int]()
   var branches:scala.List[RevCommit] = Nil
   gitGraph.branches.foreach(objectId => {
@@ -90,48 +90,41 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
       (obj:Any) => {
         val item = obj.asInstanceOf[VisualItem]
         setX(item, null, item.x * ITEMGAP)
-        val depth = item.depth + item.yOffset
-        setY(item, null, (item.y + depth) * ITEMGAP)
+        setY(item, null, item.y * ITEMGAP)
       }
     )
   }
 
-  private def propagateOffset(commit: RevCommit, currDepth: Int): Any = {
-    val node = gitGraph.getNode(commit)
-    if (hasDepth.getOrElse(commit, false)) {
-      val depth = node.depth
-      if (depth < currDepth) {
-        // print("set node.depth = " + currDepth + " - " + node.y + " for " + commit.getShortMessage())
-        node.depth =  currDepth - node.y
-      }
+  private def propagateOffset(commit: RevCommit, currY: Int): Any = {
+    if (alreadyPropagated(commit))
       return
-    }
 
-    node.depth = currDepth
-    hasDepth(commit) = true
+    hasPropagated(commit) = true
+
+    val node = gitGraph.getNode(commit)
+    if (node.y < currY) {
+      node.y = currY + 1
+    }
 
     val parents = commit.getParents()
     if (parents == null)
       return
 
-    val nextDepth = currDepth + node.yOffset
-
     parents.foreach(
               (commit: RevCommit)
-                  => propagateOffset(commit, nextDepth)
+                  => propagateOffset(commit, node.y + 1)
     )
   }
 
   private def alreadyPositioned(commit: RevCommit) = hasPosition.getOrElse(commit, false)
+  private def alreadyPropagated(commit: RevCommit) = hasPropagated.getOrElse(commit, false)
 
   private def setPosition(commit: RevCommit, row: Int, minCol: Int): Any = {
     val node = gitGraph.getNode(commit)
     if (alreadyPositioned(commit)) {
       //println("commit " + commit.getShortMessage() + " is already positioned")
-      if ((node.y + node.yOffset) <= row) {
-        //println("  > setting its offset to " + row + " - " + node.y + " + " + node.yOffset)
-        node.yOffset = row - node.y + node.yOffset
-      }
+      if (node.y < row)
+        node.y = row + 1
       return
     }
 
