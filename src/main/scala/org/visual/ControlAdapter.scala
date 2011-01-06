@@ -30,6 +30,8 @@ class ControlAdapter extends prefuse.controls.ControlAdapter {
     var revcommit = item.asInstanceOf[VisualItem]
                       .get("revcommit")
                       .asInstanceOf[RevCommit]
+    println("=======================================================")
+    println("item: " + item)
     println(Help format revcommit)
   }
   /*
