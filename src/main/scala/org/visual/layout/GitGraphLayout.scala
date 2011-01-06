@@ -33,31 +33,42 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
   private val hasPosition = new HashMap[RevCommit, Boolean]
   private val hasDepth = new HashMap[RevCommit, Boolean]
   private var gridList = new HashMap[Int, Int]()
+  var branches:scala.List[RevCommit] = Nil
+  gitGraph.branches.foreach(objectId => {
+    try {
+      branches = branches ::: List(gitGraph.revWalk.parseCommit(objectId))
+    } catch {
+      case e: Exception => {
+        println("guigit:")
+        e.printStackTrace()
+        exit
+      }
+    }
+  })
+
+  def setPosition() {
+    var i = 0
+    branches.foreach(commit => { setPosition(commit, 0, i); i += 1} )
+  }
+
+  def propagateOffset() {
+    branches.foreach(commit => propagateOffset(commit, 0) )
+  }
+  def valign() {
+    var i = 0
+    branches.foreach(commit => { valign(commit, i); i += 1 } )
+  }
 
   // TODO use higher order function for going over first and
   // second pass
   override def run(frac: Double): Unit = {
-    var branches:scala.List[RevCommit] = Nil
-    gitGraph.branches.foreach(objectId => {
-      try {
-        branches = branches ::: List(gitGraph.revWalk.parseCommit(objectId))
-      } catch {
-        case e: Exception => {
-          println("guigit:")
-          e.printStackTrace()
-          exit
-        }
-      }
-    })
 
-    var i = 0
     println("1. Set position");
-    branches.foreach(commit => { setPosition(commit, 0, i); i += 1} )
+    setPosition()
     println("2. Propagate offset")
-    branches.foreach(commit => propageOffset(commit, 0) )
+    propagateOffset()
     println("3. valign")
-    i = 0
-    branches.foreach(commit => { valign(commit, i); i += 1 } )
+    valign()
     println("4. Set XY position")
     setXYPosition()
     println("done")
@@ -85,7 +96,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
     )
   }
 
-  private def propageOffset(commit: RevCommit, currDepth: Int): Any = {
+  private def propagateOffset(commit: RevCommit, currDepth: Int): Any = {
     val node = gitGraph.getNode(commit)
     if (hasDepth.getOrElse(commit, false)) {
       val depth = node.depth
@@ -107,7 +118,7 @@ class GitGraphLayout(gitGraph: GitGraph) extends Layout {
 
     parents.foreach(
               (commit: RevCommit)
-                  => propageOffset(commit, nextDepth)
+                  => propagateOffset(commit, nextDepth)
     )
   }
 
